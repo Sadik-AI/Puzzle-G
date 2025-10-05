@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .title {
+            font-size: 24px;
+            color: #1a1a1a;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn.outline {
+            background-color: transparent;
+            border: 1px solid #007bff;
+            color: #007bff;
+        }
+
+        .btn.outline:hover {
+            background-color: #f0f8ff;
+        }
+
+        .settings {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .difficulty-buttons, .grid-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        .preview {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 300px;
+            max-height: 200px;
+            border-radius: 5px;
+        }
+
+        .puzzle-board {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            background-color: #ddd;
+            padding: 2px;
+            border-radius: 5px;
+            margin: 0 auto;
+        }
+
+        .puzzle-piece {
+            position: relative;
+            cursor: move;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+            user-select: none;
+        }
+
+        .puzzle-piece.dragging {
+            opacity: 0.8;
+            z-index: 1000;
+        }
+
+        .puzzle-piece img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            transition: transform 0.3s ease;
+        }
+
+        .puzzle-piece.correct {
+            box-shadow: 0 0 0 2px #28a745;
+        }
+
+        .rotate-button {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            width: 20px;
+            height: 20px;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .puzzle-piece:hover .rotate-button {
+            display: flex;
+        }
+
+        /* Add styles for difficulty buttons */
+        .difficulty-buttons button.active {
+            background-color: #007bff;
+            color: white;
+        }
+        .game-modes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .scoreboard {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .score-detail {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+
+        .leaderboard {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .hint-button {
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            background: rgba(255,255,255,0.9);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .piece-highlight {
+            animation: highlight 1s infinite;
+        }
+
+        @keyframes highlight {
+            0% { box-shadow: 0 0 5px 2px rgba(0,123,255,0); }
+            50% { box-shadow: 0 0 5px 2px rgba(0,123,255,0.5); }
+            100% { box-shadow: 0 0 5px 2px rgba(0,123,255,0); }
+        }
+
+        .completion-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .theme-selector {
+            margin-bottom: 15px;
+        }
+
+        .history-controls {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #007bff;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Puzzle Game</h1>
+            <div class="controls">
+                <button id="previewBtn" class="btn outline" disabled>Toggle Preview</button>
+                <button id="resetBtn" class="btn outline" disabled>Reset Game</button>
+            </div>
+        </div>
+
+        <div class="settings">
+            <h3>Difficulty:</h3>
+            <div class="difficulty-buttons">
+                <button class="btn outline" data-difficulty="easy">Easy</button>
+                <button class="btn" data-difficulty="medium">Medium</button>
+                <button class="btn outline" data-difficulty="hard">Hard</button>
+            </div>
+            <h3>Grid Size:</h3>
+            <div class="grid-buttons">
+                <button class="btn outline" data-grid="2">2 x 2</button>
+                <button class="btn" data-grid="3">3 x 3</button>
+                <button class="btn outline" data-grid="4">4 x 4</button>
+                <button class="btn outline" data-grid="5">5 x 5</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Moves</div>
+                <div class="stat-value" id="moves">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="time">00:00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Best Time</div>
+                <div class="stat-value" id="bestTime">--:--</div>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <input type="file" id="imageUpload" accept="image/*">
+        </div>
+
+        <div id="preview" class="preview" style="display: none;">
+            <h3>Original Image</h3>
+            <img id="previewImage" src="" alt="Original image">
+        </div>
+
+        <div id="puzzleBoard" class="puzzle-board"></div>
+    </div>
+    <div class="game-modes">
+        <button class="btn" data-mode="classic">Classic</button>
+        <button class="btn" data-mode="timeAttack">Time Attack</button>
+        <button class="btn" data-mode="limitedMoves">Limited Moves</button>
+        <button class="btn" data-mode="progressive">Progressive</button>
+    </div>
+
+    <!-- Theme Selector -->
+    <div class="theme-selector">
+        <label>Theme:</label>
+        <select id="themeSelect">
+            <option value="classic">Classic</option>
+            <option value="dark">Dark</option>
+            <option value="colorful">Colorful</option>
+        </select>
+    </div>
+
+    <!-- Scoreboard -->
+    <div class="scoreboard">
+        <h3>Current Score: <span id="currentScore">0</span></h3>
+        <div class="score-detail">
+            <span>Time Bonus:</span>
+            <span id="timeBonus">0</span>
+        </div>
+        <div class="score-detail">
+            <span>Move Efficiency:</span>
+            <span id="moveEfficiency">0</span>
+        </div>
+        <div class="score-detail">
+            <span>Difficulty Multiplier:</span>
+            <span id="difficultyMultiplier">1x</span>
+        </div>
+    </div>
+
+    <!-- History Controls -->
+    <div class="history-controls">
+        <button id="undoBtn" class="btn">↩ Undo</button>
+        <button id="redoBtn" class="btn">Redo ↪</button>
+        <button id="saveBtn" class="btn">Save Progress</button>
+        <button id="loadBtn" class="btn">Load Game</button>
+    </div>
+
+    <script>
+        class PuzzleGame {
+            constructor() {
+                this.gridSize = 3;
+                this.difficulty = 'medium';
+                this.pieces = [];
+                this.moves = 0;
+                this.time = 0;
+                this.timer = null;
+                this.bestTime = localStorage.getItem('bestTime') || null;
+                this.isPlaying = false;
+                this.selectedPiece = null;
+
+                this.initializeElements();
+                this.initializeEventListeners();
+            }
+
+            initializeElements() {
+                this.boardElement = document.getElementById('puzzleBoard');
+                this.previewElement = document.getElementById('preview');
+                this.previewImage = document.getElementById('previewImage');
+                this.movesElement = document.getElementById('moves');
+                this.timeElement = document.getElementById('time');
+                this.bestTimeElement = document.getElementById('bestTime');
+                this.imageUpload = document.getElementById('imageUpload');
+                this.previewBtn = document.getElementById('previewBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+
+                if (this.bestTime) {
+                    this.bestTimeElement.textContent = this.formatTime(this.bestTime);
+                }
+            }
+
+            initializeEventListeners() {
+                this.imageUpload.addEventListener('change', (e) => this.handleImageUpload(e));
+                this.previewBtn.addEventListener('click', () => this.togglePreview());
+                this.resetBtn.addEventListener('click', () => this.resetGame());
+
+                document.querySelectorAll('[data-difficulty]').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.setDifficulty(e.target.dataset.difficulty);
+                        this.updateDifficultyButtons();
+                    });
+                });
+
+                document.querySelectorAll('[data-grid]').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        this.setGridSize(parseInt(e.target.dataset.grid));
+                        this.updateGridButtons();
+                    });
+                });
+            }
+
+            updateDifficultyButtons() {
+                document.querySelectorAll('[data-difficulty]').forEach(button => {
+                    button.className = 'btn' + (button.dataset.difficulty === this.difficulty ? '' : ' outline');
+                });
+            }
+
+            updateGridButtons() {
+                document.querySelectorAll('[data-grid]').forEach(button => {
+                    button.className = 'btn' + (parseInt(button.dataset.grid) === this.gridSize ? '' : ' outline');
+                });
+            }
+
+            setDifficulty(difficulty) {
+                this.difficulty = difficulty;
+            }
+
+            setGridSize(size) {
+                this.gridSize = size;
+            }
+
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        this.previewImage.src = e.target.result;
+                        this.createPuzzlePieces(img);
+                        this.previewBtn.disabled = false;
+                        this.resetBtn.disabled = false;
+                        this.startGame();
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            createPuzzlePieces(img) {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const pieceWidth = Math.floor(img.width / this.gridSize);
+                const pieceHeight = Math.floor(img.height / this.gridSize);
+
+                canvas.width = pieceWidth;
+                canvas.height = pieceHeight;
+
+                this.pieces = [];
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        ctx.clearRect(0, 0, pieceWidth, pieceHeight);
+                        ctx.drawImage(
+                            img,
+                            x * pieceWidth, y * pieceHeight,
+                            pieceWidth, pieceHeight,
+                            0, 0,
+                            pieceWidth, pieceHeight
+                        );
+
+                        this.pieces.push({
+                            id: y * this.gridSize + x,
+                            img: canvas.toDataURL(),
+                            currentPosition: y * this.gridSize + x,
+                            correctPosition: y * this.gridSize + x,
+                            rotation: this.getInitialRotation()
+                        });
+                    }
+                }
+
+                this.shufflePieces();
+                this.renderPuzzle();
+            }
+
+            getInitialRotation() {
+                switch (this.difficulty) {
+                    case 'easy': return 0;
+                    case 'medium': return [0, 90][Math.floor(Math.random() * 2)];
+                    case 'hard': return [0, 90, 180, 270][Math.floor(Math.random() * 4)];
+                    default: return 0;
+                }
+            }
+
+            shufflePieces() {
+                for (let i = this.pieces.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.pieces[i].currentPosition, this.pieces[j].currentPosition] = 
+                    [this.pieces[j].currentPosition, this.pieces[i].currentPosition];
+                }
+            }
+
+            renderPuzzle() {
+                this.boardElement.innerHTML = '';
+                const pieceSize = Math.floor(Math.min(600, window.innerWidth - 40) / this.gridSize);
+                this.boardElement.style.width = `${pieceSize * this.gridSize + (this.gridSize + 1) * 2}px`;
+
+                this.pieces.sort((a, b) => a.currentPosition - b.currentPosition).forEach((piece, index) => {
+                    const pieceElement = document.createElement('div');
+                    pieceElement.className = 'puzzle-piece';
+                    pieceElement.style.width = `${pieceSize}px`;
+                    pieceElement.style.height = `${pieceSize}px`;
+
+                    const img = document.createElement('img');
+                    img.src = piece.img;
+                    img.style.transform = `rotate(${piece.rotation}deg)`;
+
+                    pieceElement.appendChild(img);
+                    pieceElement.setAttribute('data-id', piece.id);
+                    
+                    if (piece.currentPosition === piece.correctPosition && piece.rotation === 0) {
+                        pieceElement.classList.add('correct');
+                    }
+
+                    pieceElement.addEventListener('click', () => this.handlePieceClick(piece));
+                    pieceElement.addEventListener('dragstart', (e) => this.handleDragStart(e, piece));
+                    pieceElement.addEventListener('dragover', (e) => e.preventDefault());
+                    pieceElement.addEventListener('drop', (e) => this.handleDrop(e, piece));
+                    pieceElement.draggable = true;
+
+                    this.boardElement.appendChild(pieceElement);
+                });
+            }
+
+            handlePieceClick(piece) {
+                if (this.difficulty !== 'easy') {
+                    piece.rotation = (piece.rotation + 90) % 360;
+                    this.moves++;
+                    this.updateMoves();
+                    this.renderPuzzle();
+                    this.checkWin();
+                }
+            }
+
+            handleDragStart(e, piece) {
+                this.selectedPiece = piece;
+                e.target.classList.add('selected');
+            }
+
+            handleDrop(e, targetPiece) {
+                e.preventDefault();
+                if (this.selectedPiece) {
+                    const selectedPosition = this.selectedPiece.currentPosition;
+                    const targetPosition = targetPiece.currentPosition;
+
+                    this.pieces.forEach(piece => {
+                        if (piece.id === this.selectedPiece.id) {
+                            piece.currentPosition = targetPosition;
+                        } else if (piece.id === targetPiece.id) {
+                            piece.currentPosition = selectedPosition;
+                        }
+                    });
+
+                    this.moves++;
+                    this.updateMoves();
+                    this.renderPuzzle();
+                    this.checkWin();
+                }
+                this.selectedPiece = null;
+            }
+
+            checkWin() {
+                const isWin = this.pieces.every(piece => 
+                    piece.currentPosition === piece.correctPosition && piece.rotation === 0
+                );
+
+                if (isWin) {
+                    this.stopGame();
+                    if (!this.bestTime || this.time < this.bestTime) {
+                        this.bestTime = this.time;
+                        localStorage.setItem('bestTime', this.time);
+                        this.bestTimeElement.textContent = this.formatTime(this.time);
+                    }
+                    setTimeout(() => {
+                        alert(`Congratulations! You solved the puzzle in ${this.formatTime(this.time)} with ${this.moves} moves!`);
+                    }, 100);
+                }
+            }
+
+            startGame() {
+            this.resetStats();
+            this.isPlaying = true;
+            this.startTimer();
+        }
+
+        stopGame() {
+            this.isPlaying = false;
+            if (this.timer) {
+                clearInterval(this.timer);
+                this.timer = null;
+            }
+        }
+
+        resetGame() {
+            this.stopGame();
+            this.shufflePieces();
+            this.resetStats();
+            this.renderPuzzle();
+            this.startGame();
+        }
+
+        resetStats() {
+            this.moves = 0;
+            this.time = 0;
+            this.updateMoves();
+            this.updateTimer();
+        }
+
+        startTimer() {
+            if (this.timer) {
+                clearInterval(this.timer);
+            }
+            this.timer = setInterval(() => {
+                this.time++;
+                this.updateTimer();
+            }, 1000);
+        }
+
+        updateTimer() {
+            this.timeElement.textContent = this.formatTime(this.time);
+        }
+
+        updateMoves() {
+            this.movesElement.textContent = this.moves;
+        }
+
+        formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        togglePreview() {
+            if (this.previewElement.style.display === 'none') {
+                this.previewElement.style.display = 'block';
+            } else {
+                this.previewElement.style.display = 'none';
+            }
+        }
+
+        resizePuzzleBoard() {
+            const containerWidth = Math.min(600, window.innerWidth - 40);
+            const pieceSize = Math.floor(containerWidth / this.gridSize);
+            this.boardElement.style.width = `${pieceSize * this.gridSize + (this.gridSize + 1) * 2}px`;
+            
+            const pieces = this.boardElement.getElementsByClassName('puzzle-piece');
+            for (let piece of pieces) {
+                piece.style.width = `${pieceSize}px`;
+                piece.style.height = `${pieceSize}px`;
+            }
+        }
+
+        // Helper method to create a piece element
+        createPieceElement(piece, pieceSize) {
+            const pieceElement = document.createElement('div');
+            pieceElement.className = 'puzzle-piece';
+            pieceElement.style.width = `${pieceSize}px`;
+            pieceElement.style.height = `${pieceSize}px`;
+
+            const img = document.createElement('img');
+            img.src = piece.img;
+            img.style.transform = `rotate(${piece.rotation}deg)`;
+            img.draggable = false; // Prevent image dragging
+
+            pieceElement.appendChild(img);
+            pieceElement.setAttribute('data-id', piece.id);
+            
+            if (piece.currentPosition === piece.correctPosition && piece.rotation === 0) {
+                pieceElement.classList.add('correct');
+            }
+
+            return pieceElement;
+        }
+    }
+
+    // Initialize the game when the window loads
+    window.addEventListener('load', () => {
+        const game = new PuzzleGame();
+        
+        // Add window resize handler
+        window.addEventListener('resize', () => {
+            game.resizePuzzleBoard();
+        });
+
+        // Add keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (game.selectedPiece) {
+                switch(e.key) {
+                    case 'r':
+                    case 'R':
+                        if (game.difficulty !== 'easy') {
+                            game.selectedPiece.rotation = (game.selectedPiece.rotation + 90) % 360;
+                            game.moves++;
+                            game.updateMoves();
+                            game.renderPuzzle();
+                            game.checkWin();
+                        }
+                        break;
+                }
+            }
+        });
+
+        // Add touch support
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!game.selectedPiece) return;
+
+            const touchEndX = e.touches[0].clientX;
+            const touchEndY = e.touches[0].clientY;
+            
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+
+            // Detect swipe direction for piece movement
+            if (Math.abs(deltaX) > 50 || Math.abs(deltaY) > 50) {
+                // Handle piece movement based on swipe direction
+                // Implementation depends on your puzzle grid layout
+            }
+        });
+
+        // Add save game state
+        window.addEventListener('beforeunload', () => {
+            if (game.isPlaying) {
+                localStorage.setItem('savedGame', JSON.stringify({
+                    pieces: game.pieces,
+                    moves: game.moves,
+                    time: game.time,
+                    gridSize: game.gridSize,
+                    difficulty: game.difficulty
+                }));
+            }
+        });
+
+        // Load saved game state
+        const savedGame = localStorage.getItem('savedGame');
+        if (savedGame) {
+            const gameState = JSON.parse(savedGame);
+            game.gridSize = gameState.gridSize;
+            game.difficulty = gameState.difficulty;
+            game.moves = gameState.moves;
+            game.time = gameState.time;
+            game.pieces = gameState.pieces;
+            game.updateMoves();
+            game.updateTimer();
+            game.renderPuzzle();
+            game.startGame();
+            localStorage.removeItem('savedGame'); // Clear saved game after loading
+        }
+    });
+
+    // Add service worker for offline support
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('service-worker.js')
+            .then(registration => {
+                console.log('ServiceWorker registration successful');
+            })
+            .catch(err => {
+                console.log('ServiceWorker registration failed:', err);
+            });
+    }
+</script>
+</body>
+</html>
